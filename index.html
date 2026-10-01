@@ -149,6 +149,9 @@ const INSTAGRAM_URL = "https://www.instagram.com/luxontata/";
    FORM_URL: your form's address, ending in /formResponse (see instructions).
    ENTRY:    the entry.XXXXXXXXXX id of each question. */
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe7ObZlt7bQKC9-QkE_kYbIAkXYpKkJ7RJvcz-lI5ei35x-Ww/formResponse";
+/* Duplicate check: paste your Google Apps Script web-app URL here (see instructions).
+   Leave empty to only block repeats on the same phone/browser. */
+const CHECK_URL = "";
 const ENTRY = {
   name:    "entry.1884118372",
   phone:   "entry.784413821",
@@ -209,7 +212,19 @@ function sendToGoogle(fields){
   }catch(err){ console.error(err); }
 }
 
-$("form").addEventListener("submit", e=>{
+function savedPhones(){ try{ return JSON.parse(localStorage.getItem("gs_phones")||"[]"); }catch(_){ return []; } }
+function rememberPhone(ph){ try{ const l=savedPhones(); l.push(ph); localStorage.setItem("gs_phones",JSON.stringify(l)); }catch(_){} }
+async function phoneExists(ph){
+  if(savedPhones().includes(ph)) return true;
+  if(!CHECK_URL) return false;
+  try{
+    const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 6000);
+    const r = await fetch(CHECK_URL + "?phone=" + ph, {signal:ctl.signal}); clearTimeout(t);
+    const j = await r.json(); return j.exists === true;
+  }catch(_){ return false; }   // if the check fails, let the customer continue
+}
+
+$("form").addEventListener("submit", async e=>{
   e.preventDefault();
   const name = $("name").value.trim(), vehicle = $("vehicle").value.trim();
   let phone = $("phone").value.replace(/\D/g,"");
@@ -218,6 +233,13 @@ $("form").addEventListener("submit", e=>{
   $("phoneErr").textContent   = /^[6-9]\d{9}$/.test(phone) ? "" : "Enter a valid 10-digit mobile number.";
   $("vehicleErr").textContent = vehicle ? "" : "Enter the vehicle you use.";
   if(!name || !vehicle || $("phoneErr").textContent) return;
+
+  const btn = $("form").querySelector("button.primary");
+  btn.disabled = true; btn.textContent = "Checking…";
+  const dup = await phoneExists(phone);
+  btn.disabled = false; btn.textContent = "Continue to the wheel";
+  if(dup){ $("phoneErr").textContent = "Already submitted with this mobile number."; return; }
+  rememberPhone(phone);
 
   // send answers to Google Form in the background (hidden form + hidden iframe)
   sendToGoogle({
