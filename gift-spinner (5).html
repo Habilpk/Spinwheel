@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spin &amp; Win a Gift</title>
+<style>
+  :root{
+    --bg:#12343b; --bg2:#0c262b; --card:#fff8ec; --ink:#1b2a2e;
+    --accent:#ff6b4a; --gold:#ffc83d; --muted:#5d6d70;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(circle at 50% 0%,var(--bg) 0%,var(--bg2) 100%) fixed;
+    color:var(--ink);display:flex;justify-content:center;align-items:flex-start;
+    padding:24px 16px 40px;
+  }
+  .wrap{width:100%;max-width:420px}
+  h1{color:var(--gold);text-align:center;font-size:1.9rem;line-height:1.15;margin-bottom:6px}
+  .sub{color:#d9ece9;text-align:center;margin-bottom:22px}
+  .card{background:var(--card);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  label{display:block;font-weight:700;margin:14px 0 6px}
+  input{
+    width:100%;padding:13px 14px;font-size:1rem;border:2px solid #e3d8c3;border-radius:10px;
+    background:#fff;color:var(--ink);font-family:inherit
+  }
+  input:focus{outline:3px solid var(--gold);border-color:var(--ink)}
+  .err{color:#b3261e;font-size:.85rem;min-height:1.1em;margin-top:4px}
+  button.primary{
+    width:100%;margin-top:20px;padding:15px;font-size:1.1rem;font-weight:700;font-family:inherit;
+    background:var(--accent);color:#fff;border:0;border-radius:12px;cursor:pointer
+  }
+  button.primary:active{transform:scale(.98)}
+  button.primary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  /* Spinner */
+  .hidden{display:none!important}
+  .stage{position:relative;width:min(88vw,360px);aspect-ratio:1;margin:8px auto 18px}
+  .rim{position:absolute;inset:0;border-radius:50%;background:var(--gold);padding:10px;
+       box-shadow:0 8px 26px rgba(0,0,0,.45)}
+  #wheel{width:100%;height:100%;border-radius:50%;display:block;cursor:pointer;
+         transition:transform 5s cubic-bezier(.12,.62,.08,1)}
+  .pointer{
+    position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:3;
+    width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;
+    border-top:34px solid var(--accent);filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))
+  }
+  .hub{
+    position:absolute;top:50%;left:50%;width:72px;height:72px;transform:translate(-50%,-50%);z-index:2;
+    border-radius:50%;border:5px solid var(--gold);background:var(--accent);color:#fff;
+    font:700 1rem "Trebuchet MS",sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4)
+  }
+  .hub:disabled{cursor:default;opacity:.9}
+  .hint{color:#d9ece9;text-align:center;font-size:1.05rem}
+
+  /* Result */
+  .result{text-align:center}
+  .result .emoji{font-size:3.4rem}
+  .result h2{font-size:1.4rem;margin:6px 0}
+  .prize{font-size:1.7rem;font-weight:800;color:var(--accent);margin:6px 0 10px}
+  .result p{color:var(--muted)}
+  .insta{
+    display:inline-block;margin-top:16px;padding:13px 20px;border-radius:12px;font-weight:700;
+    text-decoration:none;color:#fff;background:linear-gradient(45deg,#f9a03f,#e1306c,#833ab4)
+  }
+  .insta:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:10}
+
+
+  .claim{display:block;width:100%;margin-top:14px;padding:15px;font:700 1.1rem "Trebuchet MS",sans-serif;
+         border:0;border-radius:12px;background:var(--accent);color:#fff;cursor:pointer}
+  .claim:disabled{background:#cfc7b8;color:#8a8478;cursor:not-allowed}
+  .claim:not(:disabled):focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .lockNote{font-size:.85rem;color:var(--muted);margin-top:8px}
+  .ticket{border:3px dashed var(--accent)}
+  .ticket .small{font-size:.95rem}
+  .ticket .who2{margin-top:2px;color:var(--ink)}
+  .ticket .show{margin-top:14px;font-weight:700;color:var(--ink);font-size:1.05rem}
+
+  @media (prefers-reduced-motion:reduce){#wheel{transition-duration:.01s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- STEP 1: FORM -->
+  <section id="formView">
+    <h1>Spin &amp; win a gift!</h1>
+    <p class="sub">Tell us who you are, then spin the wheel.</p>
+    <form class="card" id="form" novalidate>
+      <label for="name">Name</label>
+      <input id="name" autocomplete="name" required>
+      <div class="err" id="nameErr"></div>
+
+      <label for="phone">Mobile number</label>
+      <input id="phone" type="tel" inputmode="numeric" autocomplete="tel" required>
+      <div class="err" id="phoneErr"></div>
+
+      <label for="vehicle">Which vehicle are you presently using?</label>
+      <input id="vehicle" required>
+      <div class="err" id="vehicleErr"></div>
+
+      <label for="refer">Refer your friend: name &amp; mobile number (optional)</label>
+      <input id="refer" placeholder="e.g. Rahul - 98xxxxxxxx">
+
+      <button class="primary" type="submit">Continue to the wheel</button>
+    </form>
+  </section>
+
+  <!-- STEP 2: SPINNER -->
+  <section id="spinView" class="hidden">
+    <h1 id="spinTitle">Tap the wheel to spin!</h1>
+    <p class="sub" id="spinSub">Good luck, <span id="who"></span>.</p>
+    <div class="stage" id="stage">
+      <div class="pointer"></div>
+      <div class="rim"><canvas id="wheel" width="680" height="680" aria-label="Gift wheel"></canvas></div>
+      <button class="hub" id="spinBtn" type="button">SPIN</button>
+    </div>
+
+    <!-- STEP 3: RESULT -->
+    <div class="card result hidden" id="result" aria-live="polite">
+      <div class="emoji" id="prizeEmoji"></div>
+      <h2>Congratulations!</h2>
+      <div class="prize" id="prizeName"></div>
+      <p>Follow us on Instagram to unlock your gift.</p>
+      <a class="insta" id="instaLink" target="_blank" rel="noopener">Follow us on Instagram</a>
+      <button class="claim" id="claimBtn" type="button" disabled>Claim gift</button>
+      <div class="lockNote" id="lockNote">Tap the Instagram button first to unlock this.</div>
+    </div>
+
+    <!-- CLAIM CARD -->
+    <div class="card result ticket hidden" id="claimCard" aria-live="polite">
+      <div class="emoji" id="claimEmoji"></div>
+      <p class="small">Your gift</p>
+      <div class="prize" id="claimPrize"></div>
+      <p class="who2"><b id="claimName"></b> &middot; <span id="claimTime"></span></p>
+      <p class="show">Show this screen to the event team to get your prize.</p>
+    </div>
+  </section>
+</div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ============ EDIT THESE ============ */
+const INSTAGRAM_URL = "https://www.instagram.com/luxontata/";
+/* Google Form connection.
+   FORM_URL: your form's address, ending in /formResponse (see instructions).
+   ENTRY:    the entry.XXXXXXXXXX id of each question. */
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe7ObZlt7bQKC9-QkE_kYbIAkXYpKkJ7RJvcz-lI5ei35x-Ww/formResponse";
+const ENTRY = {
+  name:    "entry.1884118372",
+  phone:   "entry.784413821",
+  vehicle: "entry.1408116347",
+  refer:   "entry.1578301730"
+};
+const PRIZES = [       // weight = chance (bigger = more likely). Set 0 to disable a prize.
+  { label:"Gift 1", emoji:"🎁", color:"#ff6b4a", weight:50 },
+  { label:"Gift 2", emoji:"🎟️", color:"#1f7a8c", weight:35 },
+  { label:"Gift 3", emoji:"🏆", color:"#7b5ea7", weight:15 },
+];
+/* ==================================== */
+
+const $ = id => document.getElementById(id);
+const wheel = $("wheel"), ctx = wheel.getContext("2d");
+const N = PRIZES.length, ARC = 360 / N;
+let spinning = false, spun = false, rotation = 0, custName = "", wonPrize = null;
+
+/* ---- draw wheel ---- */
+function drawWheel(){
+  const c = wheel.width / 2, r = c - 4;
+  PRIZES.forEach((p,i)=>{
+    const a0 = (i*ARC - 90 - ARC/2) * Math.PI/180, a1 = a0 + ARC*Math.PI/180;
+    ctx.beginPath(); ctx.moveTo(c,c); ctx.arc(c,c,r,a0,a1); ctx.closePath();
+    ctx.fillStyle = p.color; ctx.fill();
+    ctx.strokeStyle = "#fff8ec"; ctx.lineWidth = 4; ctx.stroke();
+
+    ctx.save();
+    ctx.translate(c,c); ctx.rotate((a0+a1)/2);
+    ctx.textAlign = "right"; ctx.fillStyle = "#fff";
+    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 4;
+    ctx.font = "700 46px 'Trebuchet MS',sans-serif";
+    ctx.fillText(p.emoji, r-26, 4);
+    ctx.font = "700 30px 'Trebuchet MS',sans-serif";
+    ctx.fillText(p.label, r-92, 12);
+    ctx.restore();
+  });
+}
+drawWheel();
+
+/* ---- form ---- */
+function sendToGoogle(fields){
+  try{
+    let frame = document.getElementById("gf_frame");
+    if(!frame){
+      frame = document.createElement("iframe");
+      frame.name = frame.id = "gf_frame"; frame.style.display = "none";
+      document.body.appendChild(frame);
+    }
+    const f = document.createElement("form");
+    f.method = "POST"; f.action = FORM_URL; f.target = "gf_frame"; f.style.display = "none";
+    for(const k in fields){
+      const i = document.createElement("input");
+      i.type = "hidden"; i.name = k; i.value = fields[k]; f.appendChild(i);
+    }
+    document.body.appendChild(f); f.submit();
+    setTimeout(()=>f.remove(), 3000);
+  }catch(err){ console.error(err); }
+}
+
+$("form").addEventListener("submit", e=>{
+  e.preventDefault();
+  const name = $("name").value.trim(), vehicle = $("vehicle").value.trim();
+  let phone = $("phone").value.replace(/\D/g,"");
+  if(phone.length===12 && phone.startsWith("91")) phone = phone.slice(2);
+  $("nameErr").textContent    = name ? "" : "Enter your name.";
+  $("phoneErr").textContent   = /^[6-9]\d{9}$/.test(phone) ? "" : "Enter a valid 10-digit mobile number.";
+  $("vehicleErr").textContent = vehicle ? "" : "Enter the vehicle you use.";
+  if(!name || !vehicle || $("phoneErr").textContent) return;
+
+  // send answers to Google Form in the background (hidden form + hidden iframe)
+  sendToGoogle({
+    [ENTRY.name]: name,
+    [ENTRY.phone]: phone,
+    [ENTRY.vehicle]: vehicle,
+    [ENTRY.refer]: $("refer").value.trim(),
+    fvv: "1", pageHistory: "0"
+  });
+
+  custName = name;
+  $("who").textContent = name.split(" ")[0];
+  $("formView").classList.add("hidden");
+  $("spinView").classList.remove("hidden");
+  window.scrollTo(0,0);
+});
+
+/* ---- spin ---- */
+function pickPrize(){
+  const total = PRIZES.reduce((s,p)=>s+p.weight,0);
+  let n = Math.random()*total;
+  for(let i=0;i<N;i++){ n -= PRIZES[i].weight; if(n<0) return i; }
+  return 0;
+}
+function spin(){
+  if(spinning || spun) return;
+  spinning = true; $("spinBtn").disabled = true;
+  $("spinTitle").textContent = "Spinning…";
+  const win = pickPrize();
+  // segment i is centred at i*ARC from the top; rotate so it lands under the pointer
+  const jitter = (Math.random()-.5) * (ARC*.7);
+  rotation += 360*6 + (360 - (rotation % 360)) - win*ARC + jitter;
+  wheel.style.transform = `rotate(${rotation}deg)`;
+  wheel.dataset.win = win;
+}
+wheel.addEventListener("click", spin);
+$("spinBtn").addEventListener("click", spin);
+
+wheel.addEventListener("transitionend", ()=>{
+  if(!spinning) return;
+  spinning = false; spun = true;
+  const p = PRIZES[+wheel.dataset.win];
+  wonPrize = p;
+  $("prizeEmoji").textContent = p.emoji;
+  $("prizeName").textContent = p.label;
+  $("instaLink").href = INSTAGRAM_URL;
+  $("spinTitle").textContent = "You won!";
+  $("spinSub").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  $("result").scrollIntoView({behavior:"smooth",block:"nearest"});
+  confetti();
+});
+
+/* ---- follow -> unlock claim ---- */
+$("instaLink").addEventListener("click", ()=>{
+  $("claimBtn").disabled = false;
+  $("lockNote").classList.add("hidden");
+});
+$("claimBtn").addEventListener("click", ()=>{
+  if($("claimBtn").disabled || !wonPrize) return;
+  $("claimEmoji").textContent = wonPrize.emoji;
+  $("claimPrize").textContent = wonPrize.label;
+  $("claimName").textContent = custName;
+  $("claimTime").textContent = new Date().toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  $("result").classList.add("hidden");
+  $("stage").classList.add("hidden");
+  $("spinTitle").classList.add("hidden");
+  $("spinSub").classList.add("hidden");
+  $("claimCard").classList.remove("hidden");
+  $("claimCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+
+/* ---- confetti ---- */
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const cv = $("confetti"), g = cv.getContext("2d");
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ["#ffc83d","#ff6b4a","#1f7a8c","#e1306c","#fff8ec"];
+  const bits = Array.from({length:120},()=>({
+    x:Math.random()*cv.width, y:-20-Math.random()*cv.height*.5,
+    s:5+Math.random()*7, v:2+Math.random()*3.5, d:(Math.random()-.5)*2,
+    c:cols[Math.floor(Math.random()*cols.length)]
+  }));
+  let t = 0;
+  (function frame(){
+    g.clearRect(0,0,cv.width,cv.height);
+    bits.forEach(b=>{ b.y+=b.v; b.x+=b.d; g.fillStyle=b.c; g.fillRect(b.x,b.y,b.s,b.s*.6); });
+    if(++t < 220) requestAnimationFrame(frame); else g.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+</script>
+</body>
+</html>
