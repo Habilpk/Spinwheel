@@ -151,7 +151,7 @@ const INSTAGRAM_URL = "https://www.instagram.com/luxontata/";
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe7ObZlt7bQKC9-QkE_kYbIAkXYpKkJ7RJvcz-lI5ei35x-Ww/formResponse";
 /* Duplicate check: paste your Google Apps Script web-app URL here (see instructions).
    Leave empty to only block repeats on the same phone/browser. */
-const CHECK_URL = "";
+const CHECK_URL = "https://script.google.com/macros/s/AKfycbymMXPc-LbtJGrfriia7RVfViO3Iq_VgLvRhj0xLw9GqCB4CUZjB88l9458Dh8kvatM/exec";
 const ENTRY = {
   name:    "entry.1884118372",
   phone:   "entry.784413821",
@@ -219,7 +219,7 @@ async function phoneExists(ph){
   if(!CHECK_URL) return false;
   try{
     const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 6000);
-    const r = await fetch(CHECK_URL + "?phone=" + ph, {signal:ctl.signal}); clearTimeout(t);
+    const r = await fetch(CHECK_URL + "?register=1&phone=" + ph, {signal:ctl.signal}); clearTimeout(t);
     const j = await r.json(); return j.exists === true;
   }catch(_){ return false; }   // if the check fails, let the customer continue
 }
